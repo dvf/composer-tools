@@ -362,7 +362,7 @@ def generate_symphony_code(input_str: str) -> str:
         )
         body = f"(if\n      {condition_expr}\n      {asset1_expr}\n      {asset2_expr})"
 
-    return _format_defsymphony(condition_str, body)
+    return _format_defsymphony(condition_str, body).strip()
 
 
 def main():
