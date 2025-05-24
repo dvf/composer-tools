@@ -89,13 +89,14 @@ generate_symphony_code("RSI_14_SPY_LT_30__STD_20_VIX_GT_25__CUMRET_10_SPY_LT_-0.
 
 ## 🔧 API
 
-### `generate_symphony_code(input_str: str) -> str`
-Converts short notation to Clojure defsymphony code.
-
-### `parse_condition(condition_str: str) -> dict`
-Parses condition strings into structured data (useful for debugging).
-
 ```python
+generate_symphony_code(input_str: str) -> str
+# Converts short notation to Composer code.
+```
+```python
+parse_condition(condition_str: str) -> dict
+# Parses condition strings into structured data (useful for debugging).
+
 parse_condition("RSI_14_SPY_LT_30")
 # Returns: {'type': 'absolute', 'metric': 'RSI', 'window': '14', 'ticker': 'SPY', 'operator': 'LT', 'value': '30'}
 ```
