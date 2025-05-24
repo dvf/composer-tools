@@ -1,6 +1,6 @@
 # Composer Tools
 
-[![CI](https://github.com/your-repo/composer-tools/workflows/CI/badge.svg)](https://github.com/your-repo/composer-tools/actions)
+[![CI](https://github.com/dvf/composer-tools/actions/workflows/ci.yml/badge.svg)](https://github.com/dvf/composer-tools/actions/workflows/ci.yml)
 
 A small library of useful tools for [Composer](https://composer.trade)
 
@@ -65,14 +65,11 @@ generate_symphony_code("RSI_14_SPY_LT_30__STD_20_SPY_GT_0.02__CUMRET_5_SPY_LT_0 
 
 ## 📈 Supported Metrics 
 
-- `RSI` - Relative Strength Index
-- `STD` - Standard deviation of returns  
-- `CUMRET` - Cumulative return
-- `MA` - Moving average
-
-## 🔢 Supported Operators
-
-- `LT` `GT` `EQ` `LTE` `GTE` - Less than, greater than, equal, etc.
+- [X] `RSI` - Relative Strength Index
+- [X] `STD` - Standard deviation of returns  
+- [X] `CUMRET` - Cumulative return
+- [X] `MA` - Moving average
+- there are more from Composer which need to be added!
 
 ## 💡Real Examples 
 
