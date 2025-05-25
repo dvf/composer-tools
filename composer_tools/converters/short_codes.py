@@ -21,7 +21,9 @@ METRICS = {
     "RSI": "rsi",
     "STD": "stdev-return",
     "CUMRET": "cumulative-return",
-    "MA": "moving-average",
+    "MA": "moving-average-return",
+    "MAR": "moving-average-return",
+    "MAP": "moving-average-price",
 }
 
 # Constants for validation
@@ -30,7 +32,6 @@ EXPECTED_RELATIVE_PARTS = 7
 CONDITION_SEPARATOR = "__"
 PART_SEPARATOR = "_"
 ASSET_SEPARATOR = ","
-SPACE_SEPARATOR = " "
 
 
 class InvalidConditionError(ValueError):
@@ -307,12 +308,18 @@ def _format_defsymphony(condition_str: str, body: str) -> str:
 )"""
 
 
-def generate_symphony_code(input_str: str) -> str:
+def generate_symphony_code(
+    input_str: str,
+    then_branch: str,
+    else_branch: str,
+) -> str:
     """
     Generate Composer defsymphony code from input string.
 
     Args:
-        input_str: Input string in format 'CONDITION ASSET1,ASSET2'
+        input_str: Input string in format 'CONDITION[__CONDITION_2, __CONDITION_3, ...]'
+        then_branch: The "then" branch of the condition
+        else_branch: The "else" branch of the condition
 
     Returns:
         Generated Clojure code
@@ -321,21 +328,12 @@ def generate_symphony_code(input_str: str) -> str:
         InvalidConditionError: If input format is invalid
 
     Example:
-        >>> generate_symphony_code("RSI_14_SPY_LT_30 GLD,BIL")
+        >>> generate_symphony_code("RSI_14_SPY_LT_30", then_branch="SPY", else_branch="BIL")
     """
-    try:
-        condition_str, assets_str = input_str.split(SPACE_SEPARATOR)
-    except ValueError:
-        raise InvalidConditionError("Input must contain condition and assets separated by space")
+    condition = parse_condition(input_str)
 
-    assets = assets_str.split(ASSET_SEPARATOR)
-    if len(assets) != 2:
-        raise InvalidConditionError("Exactly two assets must be provided")
-
-    condition = parse_condition(condition_str)
-
-    asset1_expr = f'[(asset "{assets[0]}")]'
-    asset2_expr = f'[(asset "{assets[1]}")]'
+    asset1_expr = f'[(asset "{then_branch}")]'
+    asset2_expr = f'[(asset "{else_branch}")]'
 
     if condition["type"] == "nested":
         nested_if = _generate_nested_if_expression(condition["conditions"], 0, asset1_expr, asset2_expr)
@@ -362,7 +360,7 @@ def generate_symphony_code(input_str: str) -> str:
         )
         body = f"(if\n      {condition_expr}\n      {asset1_expr}\n      {asset2_expr})"
 
-    return _format_defsymphony(condition_str, body).strip()
+    return _format_defsymphony(input_str, body).strip()
 
 
 def main():
@@ -382,7 +380,10 @@ def main():
         try:
             print(f"\nInput: {input_str}")
             print("Generated symphony code:")
-            print(generate_symphony_code(input_str))
+            # Parse the old format to new format
+            condition_part, assets_part = input_str.split(" ", 1)
+            then_branch, else_branch = assets_part.split(",")
+            print(generate_symphony_code(condition_part, then_branch, else_branch))
         except Exception as e:
             print(f"Error processing {input_str}: {e}")
 
