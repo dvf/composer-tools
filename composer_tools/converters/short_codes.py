@@ -78,26 +78,54 @@ def _parse_nested_conditions(conditions: List[str]) -> Dict[str, Any]:
     for cond in conditions:
         parts = cond.split(PART_SEPARATOR)
 
-        if len(parts) != EXPECTED_ABSOLUTE_PARTS:
+        # Handle absolute comparison (e.g., RSI_14_SPY_LT_30)
+        if len(parts) == EXPECTED_ABSOLUTE_PARTS:
+            if parts[0] not in METRICS:
+                raise InvalidConditionError(f"Unknown metric in nested condition: {parts[0]}")
+
+            if parts[3] not in OPERATORS:
+                raise InvalidConditionError(f"Unknown operator in nested condition: {parts[3]}")
+
+            _validate_numeric_value(parts[4], "Nested condition")
+
+            parsed_conditions.append(
+                {
+                    "type": "absolute",
+                    "metric": parts[0],
+                    "window": parts[1],
+                    "ticker": parts[2],
+                    "operator": parts[3],
+                    "value": parts[4],
+                }
+            )
+
+        # Handle relative comparison (e.g., RSI_5_XLP_LT_RSI_30_SPY)
+        elif len(parts) == EXPECTED_RELATIVE_PARTS:
+            metric1, window1, ticker1, op, metric2, window2, ticker2 = parts
+
+            if metric1 not in METRICS or metric2 not in METRICS:
+                raise InvalidConditionError(f"Unknown metric in nested condition: {cond}")
+
+            if op not in OPERATORS:
+                raise InvalidConditionError(f"Unknown operator in nested condition: {op}")
+
+            if metric1 != metric2:
+                raise InvalidConditionError(f"Metrics must match for relative comparison in nested condition: {cond}")
+
+            parsed_conditions.append(
+                {
+                    "type": "relative",
+                    "metric": metric1,
+                    "window1": window1,
+                    "ticker1": ticker1,
+                    "operator": op,
+                    "window2": window2,
+                    "ticker2": ticker2,
+                }
+            )
+
+        else:
             raise InvalidConditionError(f"Invalid nested condition format: {cond}")
-
-        if parts[0] not in METRICS:
-            raise InvalidConditionError(f"Unknown metric in nested condition: {parts[0]}")
-
-        if parts[3] not in OPERATORS:
-            raise InvalidConditionError(f"Unknown operator in nested condition: {parts[3]}")
-
-        _validate_numeric_value(parts[4], "Nested condition")
-
-        parsed_conditions.append(
-            {
-                "metric": parts[0],
-                "window": parts[1],
-                "ticker": parts[2],
-                "operator": parts[3],
-                "value": parts[4],
-            }
-        )
 
     return {"type": "nested", "conditions": parsed_conditions}
 
@@ -280,9 +308,23 @@ def _generate_nested_if_expression(
         return asset1_expr
 
     condition = conditions[index]
-    condition_expr = _build_condition_expression(
-        condition["metric"], condition["ticker"], condition["window"], condition["operator"], condition["value"]
-    )
+
+    # Build condition expression based on type
+    if condition["type"] == "absolute":
+        condition_expr = _build_condition_expression(
+            condition["metric"], condition["ticker"], condition["window"], condition["operator"], condition["value"]
+        )
+    elif condition["type"] == "relative":
+        condition_expr = _build_relative_condition_expression(
+            condition["metric"],
+            condition["ticker1"],
+            condition["window1"],
+            condition["operator"],
+            condition["ticker2"],
+            condition["window2"],
+        )
+    else:
+        raise InvalidConditionError(f"Unknown condition type: {condition['type']}")
 
     next_level = _generate_nested_if_expression(conditions, index + 1, asset1_expr, asset2_expr)
 

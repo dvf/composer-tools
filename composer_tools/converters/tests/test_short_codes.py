@@ -190,6 +190,32 @@ def test_generate_symphony_code_nested_quadruple():
     assert result == expected
 
 
+def test_generate_symphony_code_nested_with_relative():
+    """Test generation of Clojure code for nested conditions including relative comparisons."""
+    # Test the specific case that was failing: relative condition in nested structure
+    result = generate_symphony_code("RSI_5_XLP_LT_RSI_30_SPY__CUMRET_60_BND_GT_CUMRET_55_XLU", "SPY", "BIL")
+
+    expected = """(defsymphony
+ "RSI_5_XLP_LT_RSI_30_SPY__CUMRET_60_BND_GT_CUMRET_55_XLU"
+ {:asset-class "EQUITIES", :rebalance-frequency :daily}
+ (weight-equal
+  [(if
+         (< (rsi "XLP" {:window 5}) (rsi "SPY" {:window 30}))
+         (if
+         (> (cumulative-return "BND" {:window 60}) (cumulative-return "XLU" {:window 55}))
+         [(asset "SPY")]
+         [(asset "BIL")])
+         [(asset "BIL")])])
+)"""
+
+    assert result == expected
+
+    # Test mixed nested conditions (absolute first, then relative)
+    result = generate_symphony_code("RSI_14_SPY_LT_30__CUMRET_75_XLU_LT_CUMRET_40_BND", "GLD", "BIL")
+    assert '(< (rsi "SPY" {:window 14}) 30.0)' in result
+    assert '(< (cumulative-return "XLU" {:window 75}) (cumulative-return "BND" {:window 40}))' in result
+
+
 def test_generate_symphony_code_different_metrics():
     """Test generation for different metric types."""
     # Test CUMRET
